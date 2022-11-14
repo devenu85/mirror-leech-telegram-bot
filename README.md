@@ -8,6 +8,7 @@ In each single file there is a major change from base code, it's almost totaly d
 - Qbittorrent support
 - Select files from Torrent before and while downloading
 - Seed torrents to specific ratio and time
+- Edit Global Options while bot running from bot settings
 ### Aria2c
 - Select files from Torrent before and while downloading
 - Seed torrents to specific ratio and time
@@ -15,6 +16,7 @@ In each single file there is a major change from base code, it's almost totaly d
 - Direct link authentication for specific link while using the bot (it will work even if only username or password)
 - Improve aria.sh
 - Fix all download listener functions and status
+- Edit Global Options while bot running from bot settings
 ### Leech
 - Leech support
 - Splitting
@@ -24,12 +26,11 @@ In each single file there is a major change from base code, it's almost totaly d
 - Upload all files to specific superGroup/channel.
 ### Google
 - Stop duplicates for all tasks except yt-dlp tasks
-- Download G-Drive links
-- Counting files/folders from Google Drive link
+- Download from Google Drive
+- Counting Google Drive files/folders
 - Search in multiple Drive folder/TeamDrive
-- Recursive Search (only with `root` or TeamDrive ID, folder ids will be listed with non-recursive method)
+- Recursive Search (only with `root` or TeamDrive ID, folder ids will be listed with non-recursive method). Based on [Sreeraj](https://github.com/SVR666) searchX-bot.
 - Use Token.pickle if file not found with Service Account, for all Gdrive functions
-- List result in html file instead of telegraph or telegram message to avoid limits by @junedkh
 - Random Service Account for each task
 ### Status
 - Clone Status
@@ -44,21 +45,23 @@ In each single file there is a major change from base code, it's almost totaly d
 ### Yt-dlp
 - Switch from youtube-dl to yt-dlp and fix all conflicts
 - Yt-dlp quality buttons
-- Support for download live streams
-- Ability to use specific yt-dlp arg for each task
+- Ability to use specific yt-dlp option for each task
+- Custom default video quality for each user
 - Fix download progress
 ### Database
-- SQL Database support
-- Save leech settings including thumbnails in database
-- Save sudo and authorized users
-- Incomplete task notifier to get incomplete task messages after restart
+- Mongo Database support
+- Store bot settings
+- Store user settings including thumbnails in database
+- Store private files
+- Store RSS last recorded data
+- Store incomplete task notifier to get incomplete task messages after restart
 ### Torrents Search
 - Torrent search support
 - Search on torrents with Torrent Search API
 - Search on torrents with variable plugins using qBittorrent search engine
 ### Archives
 - Zip instead of tar
-- Using 7-zip tool to extract all supported files
+- Using 7-zip tool to extract all supported types
 - Extract rar, zip and 7z within folder or splits with or without password
 - Zip file/folder with or without password
 ### RSS
@@ -66,7 +69,9 @@ In each single file there is a major change from base code, it's almost totaly d
 - Filter added and all functions have been improved
 ### Overall
 - Docker image support for linux `amd64, arm64/v8, arm/v7, s390x`
+- Edit variables and overwrite the private files while bot running
 - Update bot at startup and with restart command using `UPSTREAM_REPO`
+- Improve Telegraph. Based on [Sreeraj](https://github.com/SVR666) loaderX-bot.
 - Mirror/Leech/Watch/Clone/Count/Del by reply
 - Mirror/Leech/Clone multi links/files with one command
 - Custom name for all links except torrents. For files you should add extension except yt-dlp links
@@ -134,22 +139,23 @@ cp config_sample.env config.env
 ```
 _____REMOVE_THIS_LINE_____=True
 ```
-Fill up rest of the fields. Meaning of each field is discussed below:
+Fill up rest of the fields. Meaning of each field is discussed below. **NOTE**: All values must be filled between quotes, even if `Int` or `Bool`.
 
 **1. Required Fields**
 
 - `BOT_TOKEN`: The Telegram Bot Token that you got from [@BotFather](https://t.me/BotFather). `Str`
-- `GDRIVE_FOLDER_ID`: This is the Folder/TeamDrive ID of the Google Drive Folder or `root` to which you want to upload all the mirrors. `Str`
 - `OWNER_ID`: The Telegram User ID (not username) of the Owner of the bot. `Int`
-- `DOWNLOAD_DIR`: The path to the local folder where the downloads should be downloaded to. `Str`
-- `DOWNLOAD_STATUS_UPDATE_INTERVAL`: Time in seconds after which the progress/status message will be updated. Recommended `10` seconds at least. `Int`
-- `AUTO_DELETE_MESSAGE_DURATION`: Interval of time (in seconds), after which the bot deletes it's message and command message which is expected to be viewed instantly. **NOTE**: Set to `-1` to disable auto message deletion. `Int`
 - `TELEGRAM_API`: This is to authenticate your Telegram account for downloading Telegram files. You can get this from https://my.telegram.org. `Int`
 - `TELEGRAM_HASH`: This is to authenticate your Telegram account for downloading Telegram files. You can get this from https://my.telegram.org. `Str`
 
 **2. Optional Fields**
+
+- `GDRIVE_ID`: This is the Folder/TeamDrive ID of the Google Drive Folder or `root` to which you want to upload all the mirrors. Required for `Google Drive` upload. `Str`
 - `IS_TEAM_DRIVE`: Set `True` if uploading to TeamDrive. Default is `False`. `Bool`
-- `DATABASE_URL`: Your SQL Database URL. Follow this [Generate Database](https://github.com/anasty17/mirror-leech-telegram-bot/tree/master#generate-database) to generate database. Data will be saved in Database: auth and sudo users, leech settings including thumbnails for each user, rss data and incomplete tasks. **NOTE**: If deploying on heroku and using heroku postgresql delete this variable from **config.env** file. **DATABASE_URL** will be grabbed from heroku variables. `Str`
+- `DOWNLOAD_DIR`: The path to the local folder where the downloads should be downloaded to. `Str`
+- `DOWNLOAD_STATUS_UPDATE_INTERVAL`: Time in seconds after which the progress/status message will be updated. Recommended `10` seconds at least. `Int`
+- `AUTO_DELETE_MESSAGE_DURATION`: Interval of time (in seconds), after which the bot deletes it's message and command message which is expected to be viewed instantly. **NOTE**: Set to `-1` to disable auto message deletion. `Int`
+- `DATABASE_URL`: Your Mongo Database URL (Connection string). Follow this [Generate Database](https://github.com/anasty17/mirror-leech-telegram-bot/tree/master#generate-database) to generate database. Data will be saved in Database: auth and sudo users, users settings including thumbnails for each user, rss data and incomplete tasks. `Str`
 - `AUTHORIZED_CHATS`: Fill user_id and chat_id of groups/users you want to authorize. Separate them by space. `Str`
 - `SUDO_USERS`: Fill user_id of users whom you want to give sudo permission. Separate them by space. `Str`
 - `IGNORE_PENDING_REQUESTS`: Ignore pending requests after restart. Default is `False`. `Bool`
@@ -157,11 +163,12 @@ Fill up rest of the fields. Meaning of each field is discussed below:
 - `INDEX_URL`: Refer to https://gitlab.com/ParveenBhadooOfficial/Google-Drive-Index. `Str`
 - `STATUS_LIMIT`: Limit the no. of tasks shown in status message with buttons. **NOTE**: Recommended limit is `4` tasks. `Str`
 - `STOP_DUPLICATE`: Bot will check file in Drive, if it is present in Drive, downloading or cloning will be stopped. (**NOTE**: File will be checked using filename not file hash, so this feature is not perfect yet). Default is `False`. `Bool`
-- `CMD_INDEX`: commands index number. This number will added at the end all commands. `Str`
+- `CMD_PERFIX`: commands index number. This number will added at the end all commands. `Str`
 - `TORRENT_TIMEOUT`: Timeout of dead torrents downloading with qBittorrent and Aria2c in seconds. `Str`
 - `EXTENSION_FILTER`: File extensions that won't upload/clone. Separate them by space. `Str`
 - `INCOMPLETE_TASK_NOTIFIER`: Get incomplete task messages after restart. Require database and superGroup. Default is `False`. `Bool`
 - `UPTOBOX_TOKEN`: Uptobox token to mirror uptobox links. Get it from [Uptobox Premium Account](https://uptobox.com/my_account). `str`
+- `YT_DLP_QUALITY`: Default yt-dlp quality. Check all possible formats [HERE](https://github.com/yt-dlp/yt-dlp#filtering-formats).
 
 ### Update
 - `UPSTREAM_REPO`: Your github repository link, if your repo is private add `https://username:{githubtoken}@github.com/{username}/{reponame}` format. Get token from [Github settings](https://github.com/settings/tokens). So you can update your bot from filled repository on each restart. `Str`.
@@ -172,7 +179,7 @@ Fill up rest of the fields. Meaning of each field is discussed below:
 - `LEECH_SPLIT_SIZE`: Size of split in bytes. Default is `2GB`. Default is `4GB` if your account is premium. `Str`
 - `AS_DOCUMENT`: Default type of Telegram file upload. Default is `False` mean as media. `Bool`
 - `EQUAL_SPLITS`: Split files larger than **LEECH_SPLIT_SIZE** into equal parts size (Not working with zip cmd). Default is `False`. `Bool`
-- `CUSTOM_FILENAME`: Add custom word to leeched file name. `Str`
+- `LEECH_FILENAME_PERFIX`: Add custom word to leeched file name. `Str`
 - `DUMP_CHAT`: Chat ID. Upload files to specific chat. `str`. **NOTE**: Only available for superGroup/channel. Add `-100` before channel/superGroup id. In short don't add bot id or your id!
 - `USER_SESSION_STRING`: To download/upload from your telegram account. If you own premium account. To generate session string use this command `python3 generate_string_session.py` after mounting repo folder for sure. `Str`. **NOTE**: You can't use bot with private message. Use it with superGroup.
 
@@ -188,15 +195,6 @@ Fill up rest of the fields. Meaning of each field is discussed below:
 - `RSS_CHAT_ID`: Chat ID where rss links will be sent. If using channel then add channel id. Add `-100` before channel id. `Str`
 - `RSS_USER_SESSION_STRING`: To send rss links from your telegram account. Instead of adding bot to channel then linking the channel to group to get rss link since bot will not read command from itself or other bot. To generate session string use this command `python3 generate_string_session.py` after mounting repo folder for sure. `Str`. **NOTE**: Don't use same session string as `USER_SESSION_STRING`.
   - **RSS NOTE**: `DATABASE_URL` and `RSS_CHAT_ID` is required, otherwise all rss commands will not work. You must use bot in group. You can add the bot to a channel and link this channel to group so messages sent by bot to channel will be forwarded to group without using `RSS_USER_STRING_SESSION`.
-
-### Private Files
-- `ACCOUNTS_ZIP_URL`: Only if you want to load your Service Account externally from an Index Link or by any direct download link NOT webpage link. Archive the accounts folder to ZIP file. Fill this with the direct download link of zip file. `Str`. If index need authentication so add direct download as shown below:
-  - `https://username:password@example.workers.dev/...`
-- `TOKEN_PICKLE_URL`: Only if you want to load your **token.pickle** externally from an Index Link. Fill this with the direct link of that file. `Str`
-- `MULTI_SEARCH_URL`: Check `drive_folder` setup [here](https://github.com/anasty17/mirror-leech-telegram-bot/tree/master#multi-search-ids). Write **drive_folder** file [here](https://gist.github.com/). Open the raw file of that gist, it's URL will be your required variable. Should be in this form after removing commit id: https://gist.githubusercontent.com/username/gist-id/raw/drive_folder. `Str`
-- `YT_COOKIES_URL`: Youtube authentication cookies. Check setup [Here](https://github.com/ytdl-org/youtube-dl#how-do-i-pass-cookies-to-youtube-dl). Use gist raw link and remove commit id from the link, so you can edit it from gists only. `Str`
-- `NETRC_URL`: To create .netrc file contains authentication for aria2c and yt-dlp. Use gist raw link and remove commit id from the link, so you can edit it from gists only. **NOTE**: After editing .nterc you need to restart the docker or if deployed on heroku so restart dyno in case your edits related to aria2c authentication. `Str`
-  - **NOTE**: All above url variables used incase you want edit them in future easily without deploying again or if you want to deploy from public fork. If deploying using cli or private fork you can leave these variables empty add token.pickle, accounts folder, drive_folder, .netrc and cookies.txt directly to root but you can't update them without rebuild OR simply leave all above variables and use private UPSTREAM_REPO.
 
 ### MEGA
 - `MEGA_API_KEY`: Mega.nz API key to mirror mega.nz links. Get it from [Mega SDK Page](https://mega.nz/sdk). `Str`
@@ -307,11 +305,6 @@ sudo docker-compose start
 
 ------
 
-## Deploying on Heroku
-<p><a href="https://github.com/anasty17/mirror-leech-telegram-bot/tree/heroku"> <img src="https://img.shields.io/badge/Deploy%20Guide-blueviolet?style=for-the-badge&logo=heroku" width="170""/></a></p>
-
-------
-
 # Extras
 
 ## Bot commands to be set in [@BotFather](https://t.me/BotFather)
@@ -335,8 +328,8 @@ ytdl - or /y Mirror yt-dlp supported link
 ytdlzip - or /yz Mirror yt-dlp supported link as zip
 ytdlleech - or /yl Leech through yt-dlp supported link
 ytdlzipleech - or /yzl Leech yt-dlp support link as zip
-leechset - Leech settings
-setthumb - Set thumbnail
+usetting - users settings
+bsetting - bot settings
 status - Get Mirror Status message
 btsel - select files from torrent
 rsslist - or /rl List all subscribed rss feed info
@@ -458,38 +451,31 @@ Then add emails from emails.txt to Google Group, after that add this Google Grou
 ```
 python3 add_to_team_drive.py -d SharedTeamDriveSrcID
 ```
+
 ------
 
 ### Generate Database
 
-**1. Using Railway**
-- Go to [railway](https://railway.app) and create account
-- Start new project
-- Press on `Provision PostgreSQL`
-- After creating database press on `PostgresSQL`
-- Go to `Connect` column
-- Copy `Postgres Connection URL` and fill `DATABASE_URL` variable with it
-
-**2. Using Heroku PostgreSQL**
-<p><a href="https://dev.to/prisma/how-to-setup-a-free-postgresql-database-on-heroku-1dc1"> <img src="https://img.shields.io/badge/See%20Dev.to-black?style=for-the-badge&logo=dev.to" width="160""/></a></p>
-
-**3. Using ElephantSQL**
-- Go to [elephantsql](https://elephantsql.com) and create account
-- Hit `Create New Instance`
-- Follow the further instructions in the screen
-- Hit `Select Region`
-- Hit `Review`
-- Hit `Create instance`
-- Select your database name
-- Copy your database url, and fill `DATABASE_URL` variable with it
+1. Go to `https://mongodb.com/` and sign-up.
+2. Create Shared Cluster.
+3. Press on `Database` under `Deployment` Header, your created cluster will be there.
+5. Press on connect, choose `Allow Acces From Anywhere` and press on `Add IP Address` without editing the ip, then create user.
+6. After creating user press on `Choose a connection`, then press on `Connect your application`. Choose `Driver` **python** and `version` **3.6 or later**.
+7. Copy your `connection string` and replace `<password>` with the password of your user, then press close.
 
 ------
 
-## Multi Search IDs
-To use list from multi TD/folder. Run driveid.py in your terminal and follow it. It will generate **drive_folder** file or u can simply create `drive_folder` file in working directory and fill it, check below format:
+## Multi Drive List
+To use list from multi TD/folder. Run driveid.py in your terminal and follow it. It will generate **list_drives.txt** file or u can simply create `list_drives.txt` file in working directory and fill it, check below format:
 ```
 DriveName folderID/tdID or `root` IndexLink(if available)
 DriveName folderID/tdID or `root` IndexLink(if available)
+```
+
+Example:
+```
+TD1 root https://example.dev
+TD2 0AO1JDB1t3i5jUk9PVA https://example.dev
 ```
 -----
 
@@ -515,5 +501,13 @@ Using Aria2c you can also use built in feature from bot with or without username
 machine example.workers.dev password index_password
 ```
 Where host is the name of extractor (eg. instagram, Twitch). Multiple accounts of different hosts can be added each separated by a new line.
+
+-----
+
+## Donations
+
+<p> If you feel like showing your appreciation for this project, then how about buying me a coffee.</p>
+
+[!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/anasty17)
 
 -----

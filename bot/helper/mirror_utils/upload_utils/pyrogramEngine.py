@@ -5,7 +5,7 @@ from pyrogram.errors import FloodWait, RPCError
 from PIL import Image
 from threading import RLock
 
-from bot import AS_DOCUMENT, AS_DOC_USERS, AS_MEDIA_USERS, CUSTOM_FILENAME, EXTENSION_FILTER, DUMP_CHAT, app
+from bot import config_dict, user_data, GLOBAL_EXTENSION_FILTER, app
 from bot.helper.ext_utils.fs_utils import take_ss, get_media_info, get_media_streams, clean_unwanted
 from bot.helper.ext_utils.bot_utils import get_readable_file_size
 
@@ -26,7 +26,7 @@ class TgUploader:
         self.__start_time = time()
         self.__total_files = 0
         self.__is_cancelled = False
-        self.__as_doc = AS_DOCUMENT
+        self.__as_doc = config_dict['AS_DOCUMENT']
         self.__thumb = f"Thumbnails/{listener.message.from_user.id}.jpg"
         self.__msgs_dict = {}
         self.__corrupted = 0
@@ -41,7 +41,7 @@ class TgUploader:
             for file_ in sorted(files):
                 if file_ in o_files:
                     continue
-                if not file_.lower().endswith(tuple(EXTENSION_FILTER)):
+                if not file_.lower().endswith(tuple(GLOBAL_EXTENSION_FILTER)):
                     up_path = ospath.join(dirpath, file_)
                     self.__total_files += 1
                     try:
@@ -52,13 +52,12 @@ class TgUploader:
                     except Exception as e:
                         if self.__is_cancelled:
                             return
-                        else:
-                            LOGGER.error(e)
-                            continue
+                        LOGGER.error(e)
+                        continue
                     self.__upload_file(up_path, file_, dirpath)
                     if self.__is_cancelled:
                         return
-                    if (not self.__listener.isPrivate or DUMP_CHAT is not None) and not self.__is_corrupted:
+                    if (not self.__listener.isPrivate or config_dict['DUMP_CHAT']) and not self.__is_corrupted:
                         self.__msgs_dict[self.__sent_msg.link] = file_
                     self._last_uploaded = 0
                     sleep(1)
@@ -71,9 +70,9 @@ class TgUploader:
         self.__listener.onUploadComplete(None, size, self.__msgs_dict, self.__total_files, self.__corrupted, self.name)
 
     def __upload_file(self, up_path, file_, dirpath):
-        if CUSTOM_FILENAME is not None:
-            cap_mono = f"{CUSTOM_FILENAME} <code>{file_}</code>"
-            file_ = f"{CUSTOM_FILENAME} {file_}"
+        if LEECH_FILENAME_PERFIX := config_dict['LEECH_FILENAME_PERFIX']:
+            cap_mono = f"{LEECH_FILENAME_PERFIX} <code>{file_}</code>"
+            file_ = f"{LEECH_FILENAME_PERFIX} {file_}"
             new_path = ospath.join(dirpath, file_)
             osrename(up_path, new_path)
             up_path = new_path
@@ -176,20 +175,20 @@ class TgUploader:
             self.uploaded_bytes += chunk_size
 
     def __user_settings(self):
-        if self.__listener.message.from_user.id in AS_DOC_USERS:
-            self.__as_doc = True
-        elif self.__listener.message.from_user.id in AS_MEDIA_USERS:
-            self.__as_doc = False
+        user_id = self.__listener.message.from_user.id
+        user_dict = user_data.get(user_id, False)
+        if user_dict:
+            self.__as_doc = user_dict.get('as_doc', False)
         if not ospath.lexists(self.__thumb):
             self.__thumb = None
 
     def __msg_to_reply(self):
-        if DUMP_CHAT is not None:
+        if DUMP_CHAT := config_dict['DUMP_CHAT']:
             if self.__listener.isPrivate:
                 msg = self.__listener.message.text
             else:
                 msg = self.__listener.message.link
-            self.__sent_msg = app.send_message(DUMP_CHAT, msg)
+            self.__sent_msg = app.send_message(DUMP_CHAT, msg, disable_web_page_preview=True)
         else:
             self.__sent_msg = app.get_messages(self.__listener.message.chat.id, self.__listener.uid)
 
